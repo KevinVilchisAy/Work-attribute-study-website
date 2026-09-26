@@ -118,10 +118,13 @@ var automatic_sona_id = getUrlParam("sona_id") || "";
 var return_url = "https://uteppsychology.az1.qualtrics.com/jfe/form/SV_6nxWdRPgkB7ftMG";
 
 // STUDY COMPLETION
-// Keep the existing Qualtrics handoff: collect main-trial responses and surveys,
-// serialize them, and redirect to the configured return URL.
+// Send only participant identity and actual-test response times/chosen words.
+// Qualtrics must read this reduced payload; its own metadata settings are separate.
 var jsPsych = initJsPsych({
   on_finish: function () {
+    // Do not export results or redirect someone who declined consent.
+    var consent = jsPsych.data.get().filter({ task: "consent" }).values()[0];
+    if (!consent || consent.consent !== "agree") return;
     var main_data = jsPsych.data.get().filter({ task: "main_forced_choice" });
     var trials = main_data.values();
 
@@ -130,30 +133,22 @@ var jsPsych = initJsPsych({
       return row[fieldName] || "";
     }
 
+    // Array order is the presentation order of actual-test questions.
+    // rt is milliseconds from pair appearance to S/K response (not fixation time).
+    // chosen_standardized is the actual word, resolved after left/right swapping.
+    // No practice responses, key presses, conditions, or pair IDs;
+    // scoring flags, or duplicate SONA fields are included in the outgoing data.
     var payload = {
-      completed: "1",
-
-      automatic_sona_id: automatic_sona_id,
-      sona_self_report_start: getSurveyValue("sona_id_start", "sona_self_report_start"),
-      sona_self_report_end: getSurveyValue("sona_id_end", "sona_self_report_end"),
-
-      n_main_trials: String(trials.length),
-
-      trials: trials.map(function(t, index) {
+      sona_id: getSurveyValue("sona_id_start", "sona_self_report_start").trim() || automatic_sona_id.trim(),
+      first_name: getSurveyValue("sona_id_start", "first_name").trim(),
+      last_name: getSurveyValue("sona_id_start", "last_name").trim(),
+      trials: trials.map(function(t) {
         return {
-          n: index + 1,
-          pair_id: t.pair_id || "",
-          condition: t.condition || "",
-          word1: t.word1 || "",
-          word2: t.word2 || "",
-          key_pressed: t.response || "",
-          chosen_standardized: t.chosen_standardized || "",
-          chose_more_desirable: t.chose_more_desirable === undefined ? "" : t.chose_more_desirable,
-          rt: t.rt || "",
-          is_flipped: t.is_flipped === undefined ? "" : t.is_flipped
+          rt: t.rt == null ? null : t.rt,
+          chosen_standardized: t.chosen_standardized || ""
         };
       }),
-
+      // Original follow-up answers only, including optional self-description fields.
       imc: getSurveyValue("imc_question", "imc"),
       english: getSurveyValue("english_question", "english"),
       careless: getSurveyValue("careless_question", "careless"),
@@ -317,8 +312,9 @@ timeline.push({
       If you agree to take part in this study, you will be asked to compare
       ${mainStimuli.length} personality attribute pairs and, in each pair, identify the more
       desirable attribute in a person applying for a Customer Service
-      Representative job. After, you will be asked to answer a couple of
-      follow-up questions and provide some basic demographic information.
+      Representative job. You will also provide your SONA identity code,
+      first name, and last name, and answer follow-up questions about
+      your responses and demographic information.
       The study is fully administered online and can only be completed on
       devices with a physical keyboard (a PC or a laptop). Completing the
       study should take you about 20 minutes.
@@ -344,11 +340,13 @@ timeline.push({
       </p>
 
       <p>
-      Participation in this study is anonymous, which means that no one will
-      know what your answers are. No personal identifying information will or
-      should be collected. So, please do not type your name, e-mail address,
-      student ID number, or other identifying information on any of the study
-      materials.
+      This study collects your SONA identity code, first name, and last name
+      along with the word you select and your response time for each actual-test
+      pair, plus your answers to the follow-up and demographic questions.
+      Your responses are therefore linked to your identity and are not
+      anonymous. Practice responses are not included in the submitted results.
+      Please do not enter additional identifying information such as your
+      e-mail address or student ID number.
       </p>
 
       <p style="text-align:center; font-weight:bold; margin-top:30px;">
@@ -444,10 +442,18 @@ timeline.push({
   data: { task: "sona_id_start" },
   html: `
     <div class="form-box">
-      <div class="form-title">SONA IDENTITY CODE</div>
+      <div class="form-title">PARTICIPANT INFORMATION</div>
       <div class="question-block">
-        <div class="question-title">Please re-enter your anonymous SONA identity code.</div>
-        <input class="text-input" type="text" name="sona_self_report_start" required>
+        <label class="question-title" for="sona-code">SONA identity code</label><br>
+        <input id="sona-code" class="text-input" type="text" name="sona_self_report_start" pattern=".*\\S.*" required>
+      </div>
+      <div class="question-block">
+        <label class="question-title" for="first-name">First name</label><br>
+        <input id="first-name" class="text-input" type="text" name="first_name" autocomplete="given-name" pattern=".*\\S.*" required>
+      </div>
+      <div class="question-block">
+        <label class="question-title" for="last-name">Last name</label><br>
+        <input id="last-name" class="text-input" type="text" name="last_name" autocomplete="family-name" pattern=".*\\S.*" required>
       </div>
     </div>
   `,
@@ -522,7 +528,7 @@ timeline.push({
       <p>Thank you for completing the questionnaire!</p>
       <p>As stated at the beginning of the study, the purpose of this study was to examine how efficient people are in identifying personality attributes that are more desirable in applicants for a specific job. You were presented with ${mainStimuli.length} pairs of personality attributes. Some of those pairs were mixed, composed of one undesirable and one desirable attribute for the target job, and some pairs were matched, composed of attributes that were similar in desirability for the target job.</p>
       <p>In mixed pairs, the more desirable option may be easier to distinguish, whereas in matched pairs the preferred option may be less clear and more open to individual interpretation. Accordingly, you will be awarded 2 SONA research participation credits for completing this study regardless of your choices of personality attributes.</p>
-      <p>Please proceed and answer the follow-up questions and demographic questions to complete this study.</p>
+      <p>Please proceed to answer the follow-up and demographic questions before submitting your responses.</p>
     </div>`],
   show_clickable_nav: true,
   allow_backward: false,
@@ -530,6 +536,7 @@ timeline.push({
   button_label_next: "Proceed"
 });
 
+// Original data-quality and demographic questions, restored with their original wording.
 //Second Test Questions
 
 
@@ -642,24 +649,21 @@ timeline.push({
 });
 
 
-//Prompt to re-enter SONA identity ID for storage 
+
+// Submit identity, actual-test choices/times, and follow-up answers.
+// The duplicate end-of-study SONA prompt is intentionally omitted.
 timeline.push({
-  type: jsPsychSurveyHtmlForm,
-  data: { task: "sona_id_end" },
-  html: `
-    <div class="form-box">
-      <div class="form-title">SONA IDENTITY CODE</div>
-      <div class="question-block">
-        <div class="question-title">Please re-enter your anonymous SONA identity code.</div>
-        <input class="text-input" type="text" name="sona_self_report_end" required>
-      </div>
-    </div>
-  `,
-
-
-  //Submit Button
-  button_label: "Submit",
-  on_finish: parseSurveyResponse
+  type: jsPsychInstructions,
+  pages: [`<div class="instructions-box">
+    <div class="instructions-title">SUBMIT YOUR RESPONSES</div>
+    <p>You have completed the actual test and follow-up questions. Click Submit to continue to Qualtrics with your SONA identity code, first name, last name, the word selected and response time for each actual-test pair, and your follow-up answers.</p>
+    <p>Your practice responses are not included.</p>
+  </div>`],
+  show_clickable_nav: true,
+  allow_keys: false,
+  allow_backward: false,
+  show_page_number: false,
+  button_label_next: "Submit"
 });
 
 // All inputs are ready: remove the loading notice and begin the questionnaire.
