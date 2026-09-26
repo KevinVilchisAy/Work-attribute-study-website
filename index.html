@@ -41,6 +41,9 @@ button,.jspsych-btn { background:#fff!important; color:#000!important; border:1p
 
 <script>
 
+// WORD BANKS
+// Edit practice_pairs.txt and actual_test_pairs.txt to change the pairs.
+// Each object is one indivisible pair: its words are never pooled with other pairs.
 // Load both UTF-8 text files before constructing or starting any trials.
 async function loadPairs(filename, isPractice) {
   const response = await fetch(filename, { cache: "no-store" });
@@ -54,6 +57,7 @@ async function loadPairs(filename, isPractice) {
   if (!Array.isArray(pairs) || pairs.length === 0) {
     throw new Error(filename + ": must contain a nonempty array of pairs.");
   }
+  // Reject duplicate IDs and invalid fields before a participant starts.
   const ids = new Set();
   const conditions = isPractice ? ["practice"] : ["matched_positive", "matched_negative", "mixed"];
   pairs.forEach(function(pair, index) {
@@ -92,6 +96,9 @@ function escapeHtml(value) {
   });
 }
 
+// STARTUP
+// Wait for both files before building the timeline. Reloading the page creates
+// fresh random choices; no left/right assignments are saved between runs.
 async function startStudy() {
   try {
     if (window.location.protocol === "file:") {
@@ -101,6 +108,7 @@ async function startStudy() {
       loadPairs("practice_pairs.txt", true),
       loadPairs("actual_test_pairs.txt", false)
     ]);
+// Read the participant code supplied in the website address, if present.
 function getUrlParam(param) {
   var urlParams = new URLSearchParams(window.location.search);
   return urlParams.get(param);
@@ -109,6 +117,9 @@ function getUrlParam(param) {
 var automatic_sona_id = getUrlParam("sona_id") || "";
 var return_url = "https://uteppsychology.az1.qualtrics.com/jfe/form/SV_6nxWdRPgkB7ftMG";
 
+// STUDY COMPLETION
+// Keep the existing Qualtrics handoff: collect main-trial responses and surveys,
+// serialize them, and redirect to the configured return URL.
 var jsPsych = initJsPsych({
   on_finish: function () {
     var main_data = jsPsych.data.get().filter({ task: "main_forced_choice" });
@@ -160,8 +171,10 @@ var jsPsych = initJsPsych({
   }
 });
 
+// Trials and survey screens are appended here in their presentation order.
 var timeline = [];
 
+// Copy form answers into the trial record for the existing export code.
 function parseSurveyResponse(data) {
   var response = data.response || {};
   Object.keys(response).forEach(function(key) {
@@ -169,29 +182,38 @@ function parseSurveyResponse(data) {
   });
 }
 
+// WITHIN-PAIR RANDOMIZATION (used for BOTH practice and actual tests)
+// One independent coin flip per pair, per run:
+//   false -> word1 on the left (S), word2 on the right (K).
+//   true  -> word2 on the left (S), word1 on the right (K).
+// A 50/50 choice does not guarantee alternating sides or equal totals.
+// The source words, pair ID, condition, and scoring key remain together.
+// Return a new object so the original word-bank entry is not modified.
 function randomizePairSides(pair) {
   var flip = Math.random() < 0.5;
   return {
     pair_id: pair.pair_id,
-    word1: pair.word1,
-    word2: pair.word2,
+    word1: pair.word1, // Canonical word1 for data analysis, regardless of screen side.
+    word2: pair.word2, // Canonical word2 for data analysis, regardless of screen side.
     condition: pair.condition,
-    more_desirable: pair.more_desirable,
+    more_desirable: pair.more_desirable, // Scoring follows the word, not its position.
     display_left: flip ? pair.word2 : pair.word1,
     display_right: flip ? pair.word1 : pair.word2,
-    is_flipped: flip ? 1 : 0
+    is_flipped: flip ? 1 : 0 // Exported flag: 1 = reversed, 0 = original arrangement.
   };
 }
 
 
-//Function for Prompted Message when starting the Practice Exam 
+// SHARED PAIR TRIAL
+// Both phases use the same display and response logic. Only practice trials
+// show the reminder question and keyboard instructions above the pair. 
 function makeTrial(item, taskLabel, isPractice) {
   return {
 
 
     type: jsPsychHtmlKeyboardResponse,
 
-    // Prompted Message - The letter S and K are assigned to a left and right position for students to view.
+    // S always selects the displayed LEFT word; K selects the displayed RIGHT word.
     stimulus: `
       <div class="trial-wrapper"><div class="trial-content">
         ${isPractice ? `
@@ -208,7 +230,7 @@ function makeTrial(item, taskLabel, isPractice) {
     `,
 
 
-    // Assignation of Choices to characters S and K
+    // Accept only the two response keys; jsPsych records response time (rt).
 
     choices: ["s", "k"],
     data: {
@@ -220,20 +242,20 @@ function makeTrial(item, taskLabel, isPractice) {
       is_flipped: item.is_flipped
     },
     on_finish: function(data) {
+      // Resolve the pressed key against the randomized display, not word1/word2 order.
       var chosen = data.response === "s" ? item.display_left : item.display_right;
       
 
-      //Assignment of chossen word to the data file information
+      // Save the selected adjective itself so analysis is independent of screen position.
 
       if (chosen === item.word1) data.chosen_standardized = item.word1;
 
       else if (chosen === item.word2) data.chosen_standardized = item.word2;
 
-
-
-
       else data.chosen_standardized = "";
 
+      // Only mixed pairs have a designated more-desirable answer in this study.
+      // Practice and matched pairs retain a blank score, as in the original code.
       if (item.condition === "mixed") {
         data.chose_more_desirable = chosen === item.more_desirable ? 1 : 0;
       } else {
@@ -243,8 +265,7 @@ function makeTrial(item, taskLabel, isPractice) {
   };
 }
 
-
-
+// Show a fixation cross for 500 ms before each pair; ignore keys during it.
 var fixation = {
   type: jsPsychHtmlKeyboardResponse,
   stimulus: '<div class="fixation-wrapper"><div class="fixation">+</div></div>',
@@ -252,15 +273,7 @@ var fixation = {
   trial_duration: 500
 };
 
-  
-
-
-
-
-
-
-
-// Initial consesnt and purpose of research (Window 1)
+// CONSENT: present the original participant information and consent options.
 
 
 timeline.push({
@@ -401,14 +414,7 @@ timeline.push({
   }
 });
 
-
-
-
-
-
 //Instruction section (Window 2)
-
-
 
 timeline.push({
   type: jsPsychInstructions,
@@ -446,29 +452,14 @@ timeline.push({
   on_finish: parseSurveyResponse
 });
 
-
-
-
-
-
-
-
-
-
-
 // Practice Test Word Bank (Window 3)
 
-
-
-
-
-//First three prompted words
+// Practice entries come from the external text file.
 // practiceStimuli is loaded from practice_pairs.txt before the timeline is built.
-
-
 
 //
 
+// Preserve practice pair order while independently randomizing each pair's sides.
 practiceStimuli.map(randomizePairSides).forEach(function(item) {
   timeline.push(fixation);
   timeline.push(makeTrial(item, "practice_forced_choice", true));
@@ -483,37 +474,18 @@ timeline.push({
   button_label_next: "Begin"
 });
 
-
-
-
-
-
-
-
-
-
-// Actual Test Work Banks
+// ACTUAL TEST: entries come from actual_test_pairs.txt.
 
 // mainStimuli is loaded from actual_test_pairs.txt before the timeline is built.
 
-
-
-
-
-
-
+// Two separate operations:
+// 1. map(randomizePairSides): independently swap the two words WITHIN each pair.
+// 2. shuffle(...): preserve the original study's random order of WHOLE pairs.
+// Neither operation transfers a word from one pair to another.
 jsPsych.randomization.shuffle(mainStimuli.map(randomizePairSides)).forEach(function(item) {
   timeline.push(fixation);
   timeline.push(makeTrial(item, "main_forced_choice", false));
 });
-
-
-
-
-
-
-
-
 
 //Final message after completing the First Test
 
@@ -533,10 +505,6 @@ timeline.push({
   show_page_number: false,
   button_label_next: "Proceed"
 });
-
-
-
-
 
 //Second Test Questions
 
@@ -670,16 +638,11 @@ timeline.push({
   on_finish: parseSurveyResponse
 });
 
-
-
-
-
-
-
-
+// All inputs are ready: remove the loading notice and begin the questionnaire.
 document.getElementById("loading-message").remove();
 jsPsych.run(timeline);
   } catch (error) {
+    // Show loading/validation errors as plain text instead of starting an incomplete study.
     const box = document.createElement("div");
     box.className = "form-box";
     const title = document.createElement("h1");
