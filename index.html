@@ -118,7 +118,7 @@ var automatic_sona_id = getUrlParam("sona_id") || "";
 var return_url = "https://uteppsychology.az1.qualtrics.com/jfe/form/SV_6nxWdRPgkB7ftMG";
 
 // STUDY COMPLETION
-// Send only participant identity and actual-test response times/chosen words.
+// Send only SONA ID, actual-test response times/chosen words, and follow-up answers.
 // Qualtrics must read this reduced payload; its own metadata settings are separate.
 var jsPsych = initJsPsych({
   on_finish: function () {
@@ -140,8 +140,6 @@ var jsPsych = initJsPsych({
     // scoring flags, or duplicate SONA fields are included in the outgoing data.
     var payload = {
       sona_id: getSurveyValue("sona_id_start", "sona_self_report_start").trim() || automatic_sona_id.trim(),
-      first_name: getSurveyValue("sona_id_start", "first_name").trim(),
-      last_name: getSurveyValue("sona_id_start", "last_name").trim(),
       trials: trials.map(function(t) {
         return {
           rt: t.rt == null ? null : t.rt,
@@ -312,8 +310,8 @@ timeline.push({
       If you agree to take part in this study, you will be asked to compare
       ${mainStimuli.length} personality attribute pairs and, in each pair, identify the more
       desirable attribute in a person applying for a Customer Service
-      Representative job. You will also provide your SONA identity code,
-      first name, and last name, and answer follow-up questions about
+      Representative job. You will also provide your SONA identity code
+      and answer follow-up questions about
       your responses and demographic information.
       The study is fully administered online and can only be completed on
       devices with a physical keyboard (a PC or a laptop). Completing the
@@ -340,13 +338,13 @@ timeline.push({
       </p>
 
       <p>
-      This study collects your SONA identity code, first name, and last name
+      This study collects your SONA identity code
       along with the word you select and your response time for each actual-test
       pair, plus your answers to the follow-up and demographic questions.
-      Your responses are therefore linked to your identity and are not
-      anonymous. Practice responses are not included in the submitted results.
-      Please do not enter additional identifying information such as your
-      e-mail address or student ID number.
+      Your responses are linked to your SONA identity code.
+      Practice responses are not included in the submitted results.
+      Please do not enter your name, e-mail address, student ID number,
+      or other identifying information beyond your SONA identity code.
       </p>
 
       <p style="text-align:center; font-weight:bold; margin-top:30px;">
@@ -446,14 +444,6 @@ timeline.push({
       <div class="question-block">
         <label class="question-title" for="sona-code">SONA identity code</label><br>
         <input id="sona-code" class="text-input" type="text" name="sona_self_report_start" pattern=".*\\S.*" required>
-      </div>
-      <div class="question-block">
-        <label class="question-title" for="first-name">First name</label><br>
-        <input id="first-name" class="text-input" type="text" name="first_name" autocomplete="given-name" pattern=".*\\S.*" required>
-      </div>
-      <div class="question-block">
-        <label class="question-title" for="last-name">Last name</label><br>
-        <input id="last-name" class="text-input" type="text" name="last_name" autocomplete="family-name" pattern=".*\\S.*" required>
       </div>
     </div>
   `,
@@ -656,7 +646,7 @@ timeline.push({
   type: jsPsychInstructions,
   pages: [`<div class="instructions-box">
     <div class="instructions-title">SUBMIT YOUR RESPONSES</div>
-    <p>You have completed the actual test and follow-up questions. Click Submit to continue to Qualtrics with your SONA identity code, first name, last name, the word selected and response time for each actual-test pair, and your follow-up answers.</p>
+    <p>You have completed the actual test and follow-up questions. Click Submit to continue to Qualtrics with your SONA identity code, the word selected and response time for each actual-test pair, and your follow-up answers.</p>
     <p>Your practice responses are not included.</p>
   </div>`],
   show_clickable_nav: true,
