@@ -33,8 +33,7 @@ button,.jspsych-btn { background:#fff!important; color:#000!important; border:1p
 .practice-question { font-size:24px; margin-bottom:30px; color:#000!important; }
 .practice-subtext { font-size:18px; margin-bottom:45px; color:#000!important; }
 .fixation-wrapper .word-label { visibility:hidden; }
-.fixation-cross { font-size:22px; font-weight:bold; margin-bottom:18px; color:#000!important; }
-.fixation { font-size:58px; color:#000!important; }
+.fixation-cross { display:block; height:26px; line-height:26px; font-size:42px; font-weight:normal; margin-bottom:18px; color:#000!important; }
 
 .test-start-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
 .test-start-popup { max-width:calc(100vw - 48px); padding:24px 36px; border:1px solid #000; border-radius:12px; background:#fff; box-shadow:0 8px 28px rgba(0,0,0,0.12); font-size:28px; font-weight:bold; text-align:center; animation:test-start-dissolve 2200ms ease-in-out forwards; }
@@ -285,7 +284,7 @@ function makeFixation(item, isPractice) {
         <div class="practice-question">${taskQuestion}</div>
         <div class="practice-subtext">Press <strong>S</strong> for the adjective on the left and <strong>K</strong> for the adjective on the right.</div>
         ` : ``}
-        <div class="pair-row">
+        <div class="pair-row" aria-label="Two fixation crosses, one above each word position">
           <div class="pair-option"><div class="fixation-cross">+</div><div class="word-label" aria-hidden="true">${escapeHtml(item.display_left)}</div></div>
           <div class="pair-option"><div class="fixation-cross">+</div><div class="word-label" aria-hidden="true">${escapeHtml(item.display_right)}</div></div>
         </div>
