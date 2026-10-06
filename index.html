@@ -465,35 +465,7 @@ practiceStimuli.map(randomizePairSides).forEach(function(item) {
   timeline.push(makeTrial(item, "practice_forced_choice", true));
 });
 
-// Final reminder after practice and before the first scored-phase fixation.
-// Participants explicitly click the button when ready; keyboard navigation is
-// disabled here so a key press from practice cannot dismiss this reminder.
-// Practice is excluded from the exported main-test results by the task filter.
-timeline.push({
-  type: jsPsychInstructions,
-  data: { task: "actual_test_reminder" },
-  pages: [`
-    <div class="instructions-box">
-      <div class="instructions-title">THE ACTUAL TEST BEGINS NEXT</div>
-      <p>You have completed the practice trials. <strong>Your practice responses do not count toward the study results.</strong></p>
-      <p>The actual test asks the same question as the practice. <strong>Your responses in the actual test will count toward the study results.</strong></p>
-      <p>You will now compare ${mainStimuli.length} pairs of personality adjectives. Please review the job description and question one last time before you begin.</p>
-      <div class="job-box"><div class="job-title">Customer Service Representative job description</div>
-      <p>Customer Service Representative is responsible for providing high-quality support to customers by addressing inquiries, resolving issues, and delivering accurate information about products and services. This role involves communicating with customers via phone, email, or chat, ensuring a positive and efficient customer experience.</p>
-      <p>Key responsibilities include identifying customer needs, troubleshooting problems, processing orders or requests, and escalating complex issues when necessary. The representative maintains detailed and accurate records of customer interactions and follows up to ensure resolution and satisfaction.</p></div>
-      <div class="question-block">
-        <div class="question-title">${taskQuestion}</div>
-        <p>Press <strong>S</strong> to select the adjective on the <strong>left</strong>, or <strong>K</strong> to select the adjective on the <strong>right</strong>.</p>
-        <p>Choose one adjective from each pair. The words can switch sides, so read both words before responding.</p>
-      </div>
-      <p>When you are ready, click <strong>Begin actual test</strong>.</p>
-    </div>`],
-  show_clickable_nav: true,
-  allow_keys: false,
-  allow_backward: false,
-  show_page_number: false,
-  button_label_next: "Begin actual test"
-});
+
 
 // ACTUAL TEST: entries come from actual_test_pairs.txt.
 
