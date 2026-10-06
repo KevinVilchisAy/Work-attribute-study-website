@@ -34,6 +34,17 @@ button,.jspsych-btn { background:#fff!important; color:#000!important; border:1p
 .practice-subtext { font-size:18px; margin-bottom:45px; color:#000!important; }
 .fixation-wrapper { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); }
 .fixation { font-size:58px; color:#000!important; }
+
+.test-start-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.test-start-popup { max-width:calc(100vw - 48px); padding:24px 36px; border:1px solid #000; border-radius:12px; background:#fff; box-shadow:0 8px 28px rgba(0,0,0,0.12); font-size:28px; font-weight:bold; text-align:center; animation:test-start-dissolve 2200ms ease-in-out forwards; }
+@keyframes test-start-dissolve {
+  0% { opacity:0; }
+  15%, 65% { opacity:1; }
+  100% { opacity:0; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .test-start-popup { animation:none; }
+}
 </style>
 </head>
 
@@ -200,7 +211,7 @@ function randomizePairSides(pair) {
 // SHARED PAIR TRIAL
 // Both phases use the same display and response logic. Only practice trials
 // show the reminder question and keyboard instructions above the pair. 
-// Shared wording for practice trials and the final actual-test reminder.
+// Reminder question shown during practice trials.
 const taskQuestion = 'Which personality adjective below is more desirable in someone applying for the Customer Service Representative job?';
 
 function makeTrial(item, taskLabel, isPractice) {
@@ -465,7 +476,19 @@ practiceStimuli.map(randomizePairSides).forEach(function(item) {
   timeline.push(makeTrial(item, "practice_forced_choice", true));
 });
 
-
+// Brief automatic transition after practice. No click or key press is needed.
+// Keep this separate from word trials so the animation is excluded from response times.
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  data: { task: "actual_test_reminder" },
+  stimulus: `
+    <div class="test-start-overlay">
+      <div class="test-start-popup" role="status">Actual test begins</div>
+    </div>`,
+  choices: "NO_KEYS",
+  trial_duration: 2200,
+  post_trial_gap: 0
+});
 
 // ACTUAL TEST: entries come from actual_test_pairs.txt.
 
