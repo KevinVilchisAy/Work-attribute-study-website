@@ -28,13 +28,11 @@ button,.jspsych-btn { background:#fff!important; color:#000!important; border:1p
 .trial-content { width:100%; text-align:center; }
 .pair-row { display:grid; grid-template-columns:1fr 1fr; column-gap:180px; align-items:center; }
 .pair-option { width:100%; }
-.key-label { font-size:22px; font-weight:bold; margin-bottom:18px; color:#808080!important; }
+.keyboard-reminder { position:fixed; bottom:20px; left:0; right:0; text-align:center; font-size:14px; font-weight:400; color:#777; pointer-events:none; padding:0 12px; }
 .word-label { font-size:42px; white-space:nowrap; color:#000!important; }
 .practice-question { font-size:24px; margin-bottom:30px; color:#000!important; }
-.practice-subtext { font-size:18px; margin-bottom:45px; color:#000!important; }
-.fixation-wrapper .word-label { visibility:hidden; }
-.fixation-cross { display:block; height:26px; line-height:26px; font-size:42px; font-weight:normal; margin-bottom:18px; color:#000!important; }
-
+.fixation-wrapper { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); }
+.fixation { font-size:58px; color:#000!important; }
 .test-start-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
 .test-start-popup { max-width:calc(100vw - 48px); padding:24px 36px; border:1px solid #000; border-radius:12px; background:#fff; box-shadow:0 8px 28px rgba(0,0,0,0.12); font-size:28px; font-weight:bold; text-align:center; animation:test-start-dissolve 2200ms ease-in-out forwards; }
 @keyframes test-start-dissolve {
@@ -211,7 +209,7 @@ function randomizePairSides(pair) {
 // SHARED PAIR TRIAL
 // Both phases use the same display and response logic. Only practice trials
 // show the reminder question and keyboard instructions above the pair. 
-// Reminder question shown during practice trials.
+// Shared wording for practice trials and the final actual-test reminder.
 const taskQuestion = 'Which personality adjective below is more desirable in someone applying for the Customer Service Representative job?';
 
 function makeTrial(item, taskLabel, isPractice) {
@@ -225,15 +223,15 @@ function makeTrial(item, taskLabel, isPractice) {
       <div class="trial-wrapper"><div class="trial-content">
         ${isPractice ? `
         <div class="practice-question">${taskQuestion}</div>
-        <div class="practice-subtext">Press <strong>S</strong> for the adjective on the left and <strong>K</strong> for the adjective on the right.</div>
         ` : ``}
 
 
         <div class="pair-row">
-          <div class="pair-option"><div class="key-label">S</div><div class="word-label">${escapeHtml(item.display_left)}</div></div>
-          <div class="pair-option"><div class="key-label">K</div><div class="word-label">${escapeHtml(item.display_right)}</div></div>
+          <div class="pair-option"><div class="word-label">${escapeHtml(item.display_left)}</div></div>
+          <div class="pair-option"><div class="word-label">${escapeHtml(item.display_right)}</div></div>
         </div>
       </div></div>
+      <div class="keyboard-reminder">“S” for left · “K” for right</div>
     `,
 
 
@@ -272,28 +270,13 @@ function makeTrial(item, taskLabel, isPractice) {
   };
 }
 
-// Show one cross above each upcoming word for 500 ms; ignore keys during fixation.
-// Reuse the pair layout, including the practice reminder, to keep crosses aligned
-// with the S/K labels and reserve the same space for the words below them.
-function makeFixation(item, isPractice) {
-  return {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: `
-      <div class="trial-wrapper fixation-wrapper"><div class="trial-content">
-        ${isPractice ? `
-        <div class="practice-question">${taskQuestion}</div>
-        <div class="practice-subtext">Press <strong>S</strong> for the adjective on the left and <strong>K</strong> for the adjective on the right.</div>
-        ` : ``}
-        <div class="pair-row" aria-label="Two fixation crosses, one above each word position">
-          <div class="pair-option"><div class="fixation-cross">+</div><div class="word-label" aria-hidden="true">${escapeHtml(item.display_left)}</div></div>
-          <div class="pair-option"><div class="fixation-cross">+</div><div class="word-label" aria-hidden="true">${escapeHtml(item.display_right)}</div></div>
-        </div>
-      </div></div>
-    `,
-    choices: "NO_KEYS",
-    trial_duration: 500
-  };
-}
+// Show a fixation cross for 500 ms before each pair; ignore keys during it.
+var fixation = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: '<div class="fixation-wrapper"><div class="fixation">+</div></div>',
+  choices: "NO_KEYS",
+  trial_duration: 500
+};
 
 // CONSENT: present the original participant information and consent options.
 
@@ -487,7 +470,7 @@ timeline.push({
 
 // Preserve practice pair order while independently randomizing each pair's sides.
 practiceStimuli.map(randomizePairSides).forEach(function(item) {
-  timeline.push(makeFixation(item, true));
+  timeline.push(fixation);
   timeline.push(makeTrial(item, "practice_forced_choice", true));
 });
 
@@ -514,7 +497,7 @@ timeline.push({
 // 2. shuffle(...): preserve the original study's random order of WHOLE pairs.
 // Neither operation transfers a word from one pair to another.
 jsPsych.randomization.shuffle(mainStimuli.map(randomizePairSides)).forEach(function(item) {
-  timeline.push(makeFixation(item, false));
+  timeline.push(fixation);
   timeline.push(makeTrial(item, "main_forced_choice", false));
 });
 
