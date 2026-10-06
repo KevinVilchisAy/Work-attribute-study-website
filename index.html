@@ -31,8 +31,9 @@ button,.jspsych-btn { background:#fff!important; color:#000!important; border:1p
 .keyboard-reminder { position:fixed; bottom:20px; left:0; right:0; text-align:center; font-size:14px; font-weight:400; color:#777; pointer-events:none; padding:0 12px; }
 .word-label { font-size:42px; white-space:nowrap; color:#000!important; }
 .practice-question { font-size:24px; margin-bottom:30px; color:#000!important; }
-.fixation-wrapper { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); }
-.fixation { font-size:58px; color:#000!important; }
+.word-position { position:relative; }
+.fixation-placeholder { visibility:hidden; }
+.fixation-cross { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:42px; font-weight:400; color:#000!important; }
 .test-start-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
 .test-start-popup { max-width:calc(100vw - 48px); padding:24px 36px; border:1px solid #000; border-radius:12px; background:#fff; box-shadow:0 8px 28px rgba(0,0,0,0.12); font-size:28px; font-weight:bold; text-align:center; animation:test-start-dissolve 2200ms ease-in-out forwards; }
 @keyframes test-start-dissolve {
@@ -270,13 +271,31 @@ function makeTrial(item, taskLabel, isPractice) {
   };
 }
 
-// Show a fixation cross for 500 ms before each pair; ignore keys during it.
-var fixation = {
-  type: jsPsychHtmlKeyboardResponse,
-  stimulus: '<div class="fixation-wrapper"><div class="fixation">+</div></div>',
-  choices: "NO_KEYS",
-  trial_duration: 500
-};
+// Two crosses occupy the exact upcoming word positions for 500 ms.
+// Invisible words reserve identical layout dimensions; only the crosses are visible.
+function makeFixation(item, isPractice) {
+  return {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+      <div class="trial-wrapper"><div class="trial-content">
+        ${isPractice ? `<div class="practice-question">${taskQuestion}</div>` : ``}
+        <div class="pair-row">
+          <div class="pair-option word-position">
+            <div class="word-label fixation-placeholder" aria-hidden="true">${escapeHtml(item.display_left)}</div>
+            <div class="fixation-cross">+</div>
+          </div>
+          <div class="pair-option word-position">
+            <div class="word-label fixation-placeholder" aria-hidden="true">${escapeHtml(item.display_right)}</div>
+            <div class="fixation-cross">+</div>
+          </div>
+        </div>
+      </div></div>
+      <div class="keyboard-reminder">“S” for left · “K” for right</div>
+    `,
+    choices: "NO_KEYS",
+    trial_duration: 500
+  };
+}
 
 // CONSENT: present the original participant information and consent options.
 
@@ -470,7 +489,7 @@ timeline.push({
 
 // Preserve practice pair order while independently randomizing each pair's sides.
 practiceStimuli.map(randomizePairSides).forEach(function(item) {
-  timeline.push(fixation);
+  timeline.push(makeFixation(item, true));
   timeline.push(makeTrial(item, "practice_forced_choice", true));
 });
 
@@ -497,7 +516,7 @@ timeline.push({
 // 2. shuffle(...): preserve the original study's random order of WHOLE pairs.
 // Neither operation transfers a word from one pair to another.
 jsPsych.randomization.shuffle(mainStimuli.map(randomizePairSides)).forEach(function(item) {
-  timeline.push(fixation);
+  timeline.push(makeFixation(item, false));
   timeline.push(makeTrial(item, "main_forced_choice", false));
 });
 
