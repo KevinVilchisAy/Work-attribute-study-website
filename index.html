@@ -30,7 +30,8 @@ button,.jspsych-btn { background:#fff!important; color:#000!important; border:1p
 .pair-option { width:100%; }
 .keyboard-reminder { position:fixed; bottom:20px; left:0; right:0; text-align:center; font-size:14px; font-weight:400; color:#777; pointer-events:none; padding:0 12px; }
 .word-label { font-size:42px; white-space:nowrap; color:#000!important; }
-.practice-question { font-size:24px; margin-bottom:80px; color:#000!important; }
+.practice-question { position:absolute; bottom:calc(100% + 80px); left:0; width:100%; font-size:24px; line-height:1.35; margin:0; color:#000!important; }
+.consent-option { font-weight:700!important; }
 .word-position { position:relative; }
 .fixation-placeholder { visibility:hidden; }
 .fixation-cross { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:42px; font-weight:400; color:#000!important; }
@@ -208,8 +209,7 @@ function randomizePairSides(pair) {
 
 
 // SHARED PAIR TRIAL
-// Both phases show the same question above the pair and the keyboard reminder below.
-// Keep the question visible during fixation to maintain consistent word positions.
+// Both phases display the question above the word positions, including during fixation.
 const taskQuestion = 'Which personality adjective below is more desirable in someone applying for the Customer Service Representative job?';
 
 function makeTrial(item, taskLabel, isPractice) {
@@ -417,12 +417,12 @@ timeline.push({
 
       <label class="option-line">
         <input type="radio" name="consent" value="agree" required>
-        <strong>I Conscent</strong>
+        <strong class="consent-option">I Consent</strong>
       </label>
 
       <label class="option-line">
         <input type="radio" name="consent" value="decline">
-        <strong> I Do Not Conscent </strong>
+        <strong class="consent-option">I Do Not Consent</strong>
       </label>
 
     </div>
