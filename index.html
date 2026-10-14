@@ -30,7 +30,7 @@ button,.jspsych-btn { background:#fff!important; color:#000!important; border:1p
 .pair-option { width:100%; }
 .keyboard-reminder { position:fixed; bottom:20px; left:0; right:0; text-align:center; font-size:14px; font-weight:400; color:#777; pointer-events:none; padding:0 12px; }
 .word-label { font-size:42px; white-space:nowrap; color:#000!important; }
-.practice-question { font-size:24px; margin-bottom:30px; color:#000!important; }
+.practice-question { font-size:24px; margin-bottom:80px; color:#000!important; }
 .word-position { position:relative; }
 .fixation-placeholder { visibility:hidden; }
 .fixation-cross { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:42px; font-weight:400; color:#000!important; }
@@ -208,9 +208,8 @@ function randomizePairSides(pair) {
 
 
 // SHARED PAIR TRIAL
-// Both phases use the same display and response logic. Only practice trials
-// show the reminder question and keyboard instructions above the pair. 
-// Shared wording for practice trials and the final actual-test reminder.
+// Both phases show the same question above the pair and the keyboard reminder below.
+// Keep the question visible during fixation to maintain consistent word positions.
 const taskQuestion = 'Which personality adjective below is more desirable in someone applying for the Customer Service Representative job?';
 
 function makeTrial(item, taskLabel, isPractice) {
@@ -222,9 +221,7 @@ function makeTrial(item, taskLabel, isPractice) {
     // S always selects the displayed LEFT word; K selects the displayed RIGHT word.
     stimulus: `
       <div class="trial-wrapper"><div class="trial-content">
-        ${isPractice ? `
         <div class="practice-question">${taskQuestion}</div>
-        ` : ``}
 
 
         <div class="pair-row">
@@ -278,7 +275,7 @@ function makeFixation(item, isPractice) {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `
       <div class="trial-wrapper"><div class="trial-content">
-        ${isPractice ? `<div class="practice-question">${taskQuestion}</div>` : ``}
+        <div class="practice-question">${taskQuestion}</div>
         <div class="pair-row">
           <div class="pair-option word-position">
             <div class="word-label fixation-placeholder" aria-hidden="true">${escapeHtml(item.display_left)}</div>
@@ -425,7 +422,7 @@ timeline.push({
 
       <label class="option-line">
         <input type="radio" name="consent" value="decline">
-        I Do Not Conscent
+        <strong> I Do Not Conscent </strong>
       </label>
 
     </div>
@@ -435,6 +432,8 @@ timeline.push({
 
   on_finish: function(data) {
     parseSurveyResponse(data);
+
+    // Message shown to user in case the user does not conscent to taking the Test
 
     if (data.consent !== "agree") {
       jsPsych.abortExperiment(
@@ -454,15 +453,20 @@ timeline.push({
   type: jsPsychInstructions,
   pages: [`
     <div class="instructions-box">
-      <div class="instructions-title">INSTRUCTIONS</div>
+      <div class="instructions-title">INSTRUCTIONS</div> ${mainStimuli.length}
       <p>Each job requires a specific skill set but also specific personality attributes to be performed successfully. Accordingly, in choosing the best job candidate, hiring managers are often assessing if applicants possess the required, desirable personality attributes for the job they applied for.</p>
-      <p>In this study, you will be presented with ${mainStimuli.length} pairs of adjectives reflecting various personality attributes. For each pair, your task will be to identify the more desirable personality attribute in a person applying for a Customer Service Representative job. Please read a brief job description for this job carefully.</p>
+      <p>In the following task, you will be presented with ${mainStimuli.length} pairs of adjectives reflecting various personality attributes. For each pair, identify the more desirable personality attribute in a person applying for a Customer Service Representative job. Please read a brief job description for this job carefully.</p>
+
+      
       <div class="job-box"><div class="job-title">Customer Service Representative job description</div>
       <p>Customer Service Representative is responsible for providing high-quality support to customers by addressing inquiries, resolving issues, and delivering accurate information about products and services. This role involves communicating with customers via phone, email, or chat, ensuring a positive and efficient customer experience.</p>
       <p>Key responsibilities include identifying customer needs, troubleshooting problems, processing orders or requests, and escalating complex issues when necessary. The representative maintains detailed and accurate records of customer interactions and follows up to ensure resolution and satisfaction.</p></div>
-      <p>You will receive 1 SONA research participation credit for completing this task. If you correctly identify the more desirable attribute in over 90% of the pairs, your reward will double and you will be awarded 2 SONA research participation credit in total.</p>
+
+
+
+      <p>This task will take approximately 15 minutes. If you correctly identify the more desirable attribute in over 90% of the pairs, your reward will double and you will be awarded 2 SONA research participation credit in total. </p>
       <p>The adjective pairs will appear on the screen one pair at a time, with one adjective to the left and one to the right. Use the “S” key on your keyboard to select the one on the left and the “K” key on your keyboard to select the one to the right.</p>
-      <p>Before you proceed to the main questionnaire, you will be presented with ${practiceStimuli.length} practice pairs to familiarize yourself with the task and get used to keyboard keys.</p>
+      <p>Before you start the task, you will be presented with 3 practice pairs to familiarize yourself with the layout and get used to keyboard keys. </p>
     </div>`],
   show_clickable_nav: true,
   allow_backward: false,
@@ -535,10 +539,12 @@ timeline.push({
   pages: [`
     <div class="debrief-box">
       <div class="debrief-title">DEBRIEF</div>
-      <p>Thank you for completing the questionnaire!</p>
-      <p>As stated at the beginning of the study, the purpose of this study was to examine how efficient people are in identifying personality attributes that are more desirable in applicants for a specific job. You were presented with ${mainStimuli.length} pairs of personality attributes. Some of those pairs were mixed, composed of one undesirable and one desirable attribute for the target job, and some pairs were matched, composed of attributes that were similar in desirability for the target job.</p>
-      <p>In mixed pairs, the more desirable option may be easier to distinguish, whereas in matched pairs the preferred option may be less clear and more open to individual interpretation. Accordingly, you will be awarded 2 SONA research participation credits for completing this study regardless of your choices of personality attributes.</p>
-      <p>Please proceed to answer the follow-up and demographic questions before submitting your responses.</p>
+      <p>Thank you for completing the task! </p>
+      <p>As mentioned at the beginning, the purpose of this study was to examine how efficient people are in identifying personality attributes that are more desirable in applicants for a specific job. You were presented with ${mainStimuli.length} pairs of personality attributes. Some of those pairs were mixed, composed of one undesirable and one desirable 
+        attribute for the target job (for instance, Reckless and Kind), and some pairs were matched, composed of attributes that were similar in desirability for the target job (for instance, Caring and Thorough). Our research hypothesis was that participants would identify the more desirable attribute more efficiently, using less time and 
+        effort, in mixed pairs than in matched pairs. </p>
+      <p>In mixed pairs, the more desirable option may be easier to distinguish, whereas in matched pairs the preferred option may be less clear and more open to individual interpretation. Accordingly, you will be awarded 2 SONA research participation credits for completing this study regardless of your choices.  </p>
+      <p>Please proceed and answer the 3 follow-up questions and the demographic questions to complete this study. </p>
     </div>`],
   show_clickable_nav: true,
   allow_backward: false,
@@ -582,7 +588,8 @@ timeline.push({
 timeline.push({
   type: jsPsychSurveyHtmlForm,
   data: { task: "careless_question" },
-  html: `<div class="form-box"><div class="form-title">DATA QUALITY CHECKS</div><div class="question-block"><div class="question-title">3. Self-report measure of careless/insufficient effort responding</div><p>Results of our study will depend a lot on the quality of your responses. Is there any reason we should exclude your responses from our data analysis?</p>
+  html: `<div class="form-box"><div class="form-title">DATA QUALITY CHECKS</div><div class="question-block"><div class="question-title">3. Self-report measure of careless/insufficient effort responding</div><p Results of our study will depend a lot on the quality of your responses. Is there any reason we should exclude your responses from our data analysis (e.g., you were being distracted while choosing the attributes; your computer was malfunctioning while completing the questionnaire; you did not put forth an effort in identifying more desirable attributes; you were selecting attributes at random, you were using AI to assist you with responses, etc….)?
+(You will receive 2 credits for this study no matter how you respond to this question)</p>
   <label class="option-line"><input type="radio" name="careless" value="1" required> Yes – my responses SHOULD be thrown out</label>
   <label class="option-line"><input type="radio" name="careless" value="2"> No – my survey responses SHOULD NOT be thrown out</label></div></div>`,
   button_label: "Next",
@@ -603,12 +610,12 @@ timeline.push({
 timeline.push({
   type: jsPsychSurveyHtmlForm,
   data: { task: "gender_question" },
-  html: `<div class="form-box"><div class="form-title">DEMOGRAPHIC QUESTIONS</div><div class="question-block"><div class="question-title">What is your gender?</div>
-  <label class="option-line"><input type="radio" name="gender" value="1" required> Man</label>
-  <label class="option-line"><input type="radio" name="gender" value="2"> Woman</label>
+  html: `<div class="form-box"><div class="form-title">DEMOGRAPHIC QUESTIONS</div><div class="question-block"><div class="question-title">How do you describe yourself?</div>
+  <label class="option-line"><input type="radio" name="gender" value="1" required> Male</label>
+  <label class="option-line"><input type="radio" name="gender" value="2"> Female</label>
   <label class="option-line"><input type="radio" name="gender" value="3"> Non-binary</label>
   <label class="option-line"><input type="radio" name="gender" value="4"> Prefer to self-describe</label><input class="text-input" type="text" name="gender_text" placeholder="Optional self-description">
-  <label class="option-line"><input type="radio" name="gender" value="5"> Prefer not to answer</label></div></div>`,
+  <label class="option-line"><input type="radio" name="gender" value="5"> Prefer not to say</label></div></div>`,
   button_label: "Next",
   on_finish: parseSurveyResponse
 });
@@ -624,7 +631,7 @@ timeline.push({
   <label class="option-line"><input type="radio" name="year_school" value="3"> Junior</label>
   <label class="option-line"><input type="radio" name="year_school" value="4"> Senior</label>
   <label class="option-line"><input type="radio" name="year_school" value="5"> Prefer to self-describe</label><input class="text-input" type="text" name="year_school_text" placeholder="Optional self-description">
-  <label class="option-line"><input type="radio" name="year_school" value="6"> Prefer not to answer</label></div></div>`,
+  <label class="option-line"><input type="radio" name="year_school" value="6"> Prefer not to say</label></div></div>`,
   button_label: "Next",
   on_finish: parseSurveyResponse
 });
@@ -634,13 +641,14 @@ timeline.push({
 timeline.push({
   type: jsPsychSurveyHtmlForm,
   data: { task: "ethnicity_question" },
-  html: `<div class="form-box"><div class="form-title">DEMOGRAPHIC QUESTIONS</div><div class="question-block"><div class="question-title">What is your ethnicity?</div>
+  html: `<div class="form-box"><div class="form-title">DEMOGRAPHIC QUESTIONS</div><div class="question-block"><div class="question-title">What best describes your race?</div>
   <label class="option-line"><input type="radio" name="ethnicity" value="1" required> American Indian / Alaskan Indian</label>
   <label class="option-line"><input type="radio" name="ethnicity" value="2"> Native Hawaiian or Other Pacific Islander</label>
   <label class="option-line"><input type="radio" name="ethnicity" value="3"> Black / African American</label>
+   <label class="option-line"><input type="radio" name="ethnicity" value="3"> Asian</label>
   <label class="option-line"><input type="radio" name="ethnicity" value="4"> White / Caucasian</label>
   <label class="option-line"><input type="radio" name="ethnicity" value="5"> Prefer to self-describe</label><input class="text-input" type="text" name="ethnicity_text" placeholder="Optional self-description">
-  <label class="option-line"><input type="radio" name="ethnicity" value="6"> Prefer not to answer</label></div></div>`,
+  <label class="option-line"><input type="radio" name="ethnicity" value="6"> Prefer not to say</label></div></div>`,
   button_label: "Next",
   on_finish: parseSurveyResponse
 });
@@ -653,8 +661,8 @@ timeline.push({
   html: `<div class="form-box"><div class="form-title">DEMOGRAPHIC QUESTIONS</div><div class="question-block"><div class="question-title">Are you Hispanic or Latino?</div>
   <label class="option-line"><input type="radio" name="hispanic" value="1" required> Yes</label>
   <label class="option-line"><input type="radio" name="hispanic" value="2"> No</label>
-  <label class="option-line"><input type="radio" name="hispanic" value="3"> Prefer not to answer</label></div></div>`,
-  button_label: "Next",
+  <label class="option-line"><input type="radio" name="hispanic" value="3"> Prefer not to say</label></div></div>`,
+  button_label: "FINISH",
   on_finish: parseSurveyResponse
 });
 
